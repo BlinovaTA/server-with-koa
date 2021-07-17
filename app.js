@@ -1,6 +1,8 @@
 const Koa = require('koa')
 const app = new Koa()
-const fs = require('fs')
+const fs = require('fs/promises')
+const { constants } = require('fs')
+const path = require('path')
 const static = require('koa-static')
 const session = require('koa-session')
 const Pug = require('koa-pug')
@@ -34,9 +36,11 @@ app
   .use(router.routes())
   .use(router.allowedMethods())
 
-app.listen(port, () => {
-  if (!fs.existsSync(config.upload)) {
-    fs.mkdirSync(config.upload)
-  }
+app.listen(port, async () => {
+  const upload = path.normalize(path.join('./public', 'upload'))
+
+  await fs.access('./public', constants.R_OK | constants.W_OK)
+  await fs.mkdir(upload, { recursive: true })
+
   console.log(`> Ready On Server http://localhost:${port}`)
 })

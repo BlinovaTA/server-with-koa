@@ -1,9 +1,11 @@
 const Router = require('koa-router')
 const router = new Router()
+const main = require('./main')
+koaBody = require('koa-body')
 
-/* router.use('/', require('./main'))
+router.get('/', main.get).post('/', koaBody(), main.post)
 
-router.use('/login', require('./login'))
+/* router.use('/login', require('./login'))
 
 router.use('/admin', require('./admin')) */
 
