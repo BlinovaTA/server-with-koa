@@ -1,43 +1,42 @@
-const createError = require('http-errors')
-const express = require('express')
-const path = require('path')
-const logger = require('morgan')
+const Koa = require('koa')
+const app = new Koa()
+const fs = require('fs')
+const static = require('koa-static')
+const session = require('koa-session')
+const Pug = require('koa-pug')
+const pug = new Pug({
+  viewPath: './views',
+  pretty: false,
+  basedir: './views',
+  noCache: true,
+  app: app,
+})
+const errorHandler = require('./libs/error')
+const config = require('./config')
+const router = require('./routes')
+const port = process.env.PORT || 5000
 
-const mainRouter = require('./routes/')
+app.use(static('./public'))
 
-const app = express()
+app.use(errorHandler)
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'pug')
-
-process.env.NODE_ENV === 'development'
-  ? app.use(logger('dev'))
-  : app.use(logger('short'))
-
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
-
-app.use(express.static(path.join(__dirname, 'public')))
-
-app.use('/', mainRouter)
-
-// catch 404 and forward to error handler
-app.use((req, __, next) => {
-  next(
-    createError(404, `Ой, извините, но по пути ${req.url} ничего не найдено!`)
-  )
+app.on('error', (err, ctx) => {
+  ctx.request
+  ctx.response.body = {}
+  ctx.render('error', {
+    status: ctx.response.status,
+    error: ctx.response.message,
+  })
 })
 
-// error handler
-app.use((err, req, res, next) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
+app
+  .use(session(config.session, app))
+  .use(router.routes())
+  .use(router.allowedMethods())
 
-  // render the error page
-  res.status(err.status || 500)
-  res.render('error')
+app.listen(port, () => {
+  if (!fs.existsSync(config.upload)) {
+    fs.mkdirSync(config.upload)
+  }
+  console.log(`> Ready On Server http://localhost:${port}`)
 })
-
-app.listen(3000, () => {})
