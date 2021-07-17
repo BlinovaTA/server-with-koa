@@ -11,6 +11,7 @@ router
   .get('/login', login.get)
   .post('/login', koaBody(), login.post)
   .get('/admin', admin.get)
+  .post('/admin/skills', koaBody(), admin.skills)
 
 /* router.use('/login', require('./login'))
 
