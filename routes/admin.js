@@ -30,7 +30,7 @@ const validation = (fields, files) => {
 }
 
 const get = async (ctx, next) => {
-  const skills = db.get('skills').value()
+  const skills = await db.get('skills')
 
   return await ctx.render('pages/admin', { title: 'Admin page', skills })
 }
@@ -42,7 +42,7 @@ const skills = async (ctx, next) => {
     const value = skills[skill]
 
     if (skillsFields.includes(skill) && isValid(value)) {
-      db.get('skills').find({ id: skill }).assign({ number: value }).write()
+      db.rewrite('skills', { id: skill }, { number: value })
     }
   }
 
@@ -76,13 +76,11 @@ const upload = async (ctx, next) => {
 
       await fs.rename(photoPath, fileName)
 
-      db.get('products')
-        .push({
-          src: path.normalize(path.join('/upload', photoName)),
-          name: name,
-          price: Number(price),
-        })
-        .write()
+      db.push('products', {
+        src: path.normalize(path.join('/upload', photoName)),
+        name: name,
+        price: Number(price),
+      })
     })
 
     return ctx.redirect('/admin')

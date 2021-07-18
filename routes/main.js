@@ -2,15 +2,18 @@ const db = require('../db/index')
 const config = require('../config.json')
 const nodemailer = require('nodemailer')
 
-const getData = () => {
+const getData = async () => {
+  const products = await db.get('products')
+  const skills = await db.get('skills')
+
   return {
-    products: db.get('products').value(),
-    skills: db.get('skills').value(),
+    products,
+    skills,
   }
 }
 
 const get = async (ctx, next) => {
-  const { products, skills } = getData()
+  const { products, skills } = await getData()
 
   return await ctx.render('pages/index', {
     title: 'Main page',

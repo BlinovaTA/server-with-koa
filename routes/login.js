@@ -1,11 +1,11 @@
 const db = require('../db/index')
 
 const get = async (ctx, next) => {
-  return await ctx.render('pages/login', { title: 'SignIn page'})
+  return await ctx.render('pages/login', { title: 'SignIn page' })
 }
 
 const post = async (ctx, next) => {
-  const {email, password } = ctx.request.body;
+  const { email, password } = ctx.request.body
 
   if (!email || !password) {
     return await ctx.render('pages/login', {
@@ -14,7 +14,7 @@ const post = async (ctx, next) => {
     })
   }
 
-  const userIsExist = db.get('users').find({ email, password }).value();
+  const userIsExist = await db.find('users', { email, password })
 
   if (userIsExist) {
     return await ctx.redirect('/admin')
@@ -28,5 +28,5 @@ const post = async (ctx, next) => {
 
 module.exports = {
   get,
-  post
+  post,
 }

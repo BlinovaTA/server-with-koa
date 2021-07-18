@@ -14,8 +14,4 @@ router
   .post('/admin/skills', koaBody(), admin.skills)
   .post('/admin/upload', koaBody(), admin.upload)
 
-/* router.use('/login', require('./login'))
-
-router.use('/admin', require('./admin')) */
-
 module.exports = router
