@@ -45,7 +45,7 @@ class DB {
   }
 
   async rewrite(selector, id, value) {
-    let data = await this.get(selector)
+    const data = await this.get(selector)
     const idKey = Object.keys(id)[0]
     const valueKey = Object.keys(value)[0]
 
@@ -56,7 +56,7 @@ class DB {
   }
 
   async push(selector, newItem) {
-    let data = await this.get(selector)
+    const data = await this.get(selector)
     data.push(newItem)
 
     this.write()

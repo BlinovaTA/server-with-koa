@@ -3,7 +3,7 @@ module.exports = async (ctx, next) => {
     await next()
 
     if (ctx.status === 404) {
-      let err = {
+      const err = {
         status: ctx.response.status,
         error: ctx.response.message,
       }
