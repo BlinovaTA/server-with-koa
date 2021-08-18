@@ -1,33 +1,96 @@
-const express = require('express')
-const router = express.Router()
+const db = require('../db/index')
+const formidable = require('formidable')
+const fs = require('fs/promises')
+const path = require('path')
 
-router.get('/', (req, res, next) => {
-  // TODO: Реализовать, подстановку в поля ввода формы 'Счетчики'
-  // актуальных значений из сохраненых (по желанию)
-  res.render('pages/admin', { title: 'Admin page' })
-})
+const skillsFields = ['age', 'concerts', 'cities', 'years']
 
-router.post('/skills', (req, res, next) => {
-  /*
-  TODO: Реализовать сохранение нового объекта со значениями блока скиллов
+const isValid = (value) => {
+  if (value === '' || isNaN(value)) {
+    return false
+  }
 
-    в переменной age - Возраст начала занятий на скрипке
-    в переменной concerts - Концертов отыграл
-    в переменной cities - Максимальное число городов в туре
-    в переменной years - Лет на сцене в качестве скрипача
-  */
-  res.send('Реализовать сохранение нового объекта со значениями блока скиллов')
-})
+  return true
+}
 
-router.post('/upload', (req, res, next) => {
-  /* TODO:
-   Реализовать сохранения объекта товара на стороне сервера с картинкой товара и описанием
-    в переменной photo - Картинка товара
-    в переменной name - Название товара
-    в переменной price - Цена товара
-    На текущий момент эта информация хранится в файле data.json  в массиве products
-  */
-  res.send('Реализовать сохранения объекта товара на стороне сервера')
-})
+const validation = (fields, files) => {
+  if (files.photo.name === '' || files.photo.size === 0) {
+    return { status: 'Picture not loaded', err: true }
+  }
 
-module.exports = router
+  if (!fields.name) {
+    return { status: 'No picture description', err: true }
+  }
+
+  if (!fields.price) {
+    return { status: 'No price', err: true }
+  }
+
+  return { status: 'Ok', err: false }
+}
+
+const get = async (ctx, next) => {
+  const skills = await db.get('skills')
+
+  return await ctx.render('pages/admin', { title: 'Admin page', skills })
+}
+
+const skills = async (ctx, next) => {
+  const skills = ctx.request.body
+
+  for (const skill in skills) {
+    const value = skills[skill]
+
+    if (skillsFields.includes(skill) && isValid(value)) {
+      db.rewrite('skills', { id: skill }, { number: value })
+    }
+  }
+
+  return ctx.redirect('/admin')
+}
+
+const upload = async (ctx, next) => {
+  try {
+    const form = new formidable.IncomingForm()
+    const upload = path.normalize(path.join('./public', 'upload'))
+
+    form.uploadDir = path.normalize(path.join(process.cwd(), upload))
+
+    form.parse(ctx.req, async (err, fields, files) => {
+      if (err) {
+        return next(err)
+      }
+
+      const valid = validation(fields, files)
+
+      const { path: photoPath, name: photoName } = files.photo
+      const { price, name } = fields
+
+      if (valid.err) {
+        await fs.unlink(photoPath)
+
+        return next({ message: valid.status })
+      }
+
+      const fileName = path.normalize(path.join(upload, photoName))
+
+      await fs.rename(photoPath, fileName)
+
+      db.push('products', {
+        src: path.normalize(path.join('/upload', photoName)),
+        name: name,
+        price: Number(price),
+      })
+    })
+
+    return ctx.redirect('/admin')
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = {
+  get,
+  skills,
+  upload,
+}

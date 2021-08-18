@@ -1,13 +1,32 @@
-const express = require('express')
-const router = express.Router()
+const db = require('../db/index')
 
-router.get('/', (req, res, next) => {
-  res.render('pages/login', { title: 'SigIn page' })
-})
+const get = async (ctx, next) => {
+  return await ctx.render('pages/login', { title: 'SignIn page' })
+}
 
-router.post('/', (req, res, next) => {
-  // TODO: Реализовать функцию входа в админ панель по email и паролю
-  res.send('Реализовать функцию входа по email и паролю')
-})
+const post = async (ctx, next) => {
+  const { email, password } = ctx.request.body
 
-module.exports = router
+  if (!email || !password) {
+    return await ctx.render('pages/login', {
+      title: 'SigIn page',
+      msglogin: 'Incorrect email or password',
+    })
+  }
+
+  const userIsExist = await db.find('users', { email, password })
+
+  if (userIsExist) {
+    return await ctx.redirect('/admin')
+  } else {
+    return await ctx.render('pages/login', {
+      title: 'SigIn page',
+      msglogin: 'User not founded',
+    })
+  }
+}
+
+module.exports = {
+  get,
+  post,
+}
